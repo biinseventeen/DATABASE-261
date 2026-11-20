@@ -1,0 +1,75 @@
+Design changes this revision reflects:
+  - USER.Age, ORDER.Total_Amount and PRODUCT.Average_Rating are DERIVED (never stored).
+  - BUYER.Loyalty_Points removed.
+  - PRODUCT_VARIANT added: Current_Price and Stock_Quantity moved from PRODUCT to PRODUCT_VARIANT; ORDER_DETAIL references Variant_ID.
+  - VOUCHER.Discount_Value renamed Discount_Percent (a percentage); VOUCHER.Max_Discount_Amount and VOUCHER.Quantity added.
+  - ORDER.Delivered_At added (timestamp of the transition to "Delivery Successful").
+  - Tables USER and ORDER are physically named Users and Orders (reserved words in T-SQL).
+
+1. Inventory Constraint: The Purchased_Quantity of an ORDER_DETAIL line must not exceed the Stock_Quantity of the PRODUCT_VARIANT it refers to at the time the line is added to the order (checkout). The same check is repeated, summed per variant, at the moment the order is confirmed.
+
+2. Review Timing Constraint: The date part of a REVIEW's Review_Date must be greater than or equal to the date part of Delivered_At of at least one order of the reviewer that contains a variant of the reviewed PRODUCT. Delivered_At records when ORDER.Status became "Delivery Successful"; it is set once and can never be changed.
+
+3. Review Eligibility Constraint: A BUYER may create a REVIEW for a PRODUCT only if the buyer has at least one ORDER with Status = "Delivery Successful" (a completed order) containing at least one PRODUCT_VARIANT of that product.
+
+4. Total Amount Calculation Constraint: Total_Amount of an ORDER is derived (never stored) as
+      Subtotal        = SUM(Purchased_Quantity x Unit_Price_At_Order_Time) over the order's lines
+      Discount_Amount = 0 if the order has no voucher; otherwise
+                        MIN( ROUND(Subtotal x Discount_Percent / 100, 0), Max_Discount_Amount )
+      Total_Amount    = Subtotal - Discount_Amount + Shipping_Fee
+   The percentage applies to the products' subtotal only, never to Shipping_Fee. Amounts are whole VND.
+
+5. Inventory Update Constraint: When an ORDER moves from "Pending Confirmation" to "Confirmed", the Stock_Quantity of each PRODUCT_VARIANT in the order decreases by the Purchased_Quantity of its line. If a "Confirmed" order is later "Cancelled", the same quantities are added back.
+
+6. Data Domain Constraint:
+   - Purchased_Quantity is a positive integer; Stock_Quantity and VOUCHER.Quantity are integers (Stock_Quantity >= 0, VOUCHER.Quantity >= 1).
+   - BUYER.Loyalty_Points no longer exists.
+   - Discount_Percent is an integer from 10 to 50 inclusive.
+   - Monetary values (whole VND): Current_Price and Unit_Price_At_Order_Time 1..1,000,000,000; Shipping_Fee 0..5,000,000; Min_Order_Value 0..1,000,000,000; Max_Discount_Amount 1..1,000,000,000; Payment.Amount 1..1,000,000,000,000; Refund_Amount 0..1,000,000,000,000.
+   - Date_of_Birth cannot be in the future (and is not before 1900-01-01).
+   - Rating_Score is an integer from 1 to 5.
+   - Gender is Male, Female or Other (or NULL); Address_Type is Home or Office; Payment Method is COD, Bank Transfer, E-Wallet or Credit Card.
+
+7. Voucher Condition Constraint: An ORDER may be associated with a VOUCHER only if the products' subtotal (before discount and shipping) is greater than or equal to the voucher's Min_Order_Value. Because order lines are inserted after the order header, this is verified when the order is confirmed.
+
+8. Voucher Validity Constraint:
+   - A BUYER must have received the VOUCHER (a BUYER_VOUCHER record) before applying it to an order.
+   - For every VOUCHER, End_Date >= Start_Date.
+   - The Order_Date (date part) must fall between Start_Date and End_Date inclusive.
+
+9. Seller Age Constraint: The Age of a USER, computed from Date_of_Birth, must be 18 or greater for the user to belong to SELLER. A seller's Date_of_Birth cannot be edited so that the seller becomes younger than 18.
+
+10. Category Recursion Constraint: A category cannot have itself, or any of its descendants, as its parent category.
+
+11. Password Constraint: Password must be 8 to 16 characters and contain at least one uppercase letter, one lowercase letter and one digit. (The password is stored in plaintext ONLY so the database can enforce this rule; production systems store a salted hash and validate the policy in the application.)
+
+12. User Address Constraint: The ADDRESS used by an ORDER (DELIVERED_TO) must belong to the BUYER who placed the order.
+
+13. Payment Amount Constraint: Once a PAYMENT is confirmed (Payment_Status "Paid"), its Amount must equal the Total_Amount of the corresponding ORDER.
+
+14. Status Sequence Constraint:
+   ORDER.Status:    Pending Confirmation -> Confirmed | Cancelled;  Confirmed -> Shipping | Cancelled;  Shipping -> Delivery Successful.  New orders start as Pending Confirmation. "Delivery Successful" and "Cancelled" are final.
+   Payment_Status:  Pending -> Paid | Failed;  Paid -> Refunded.  New payments start as Pending.
+   Return_Status:   Requested -> Approved | Rejected;  Approved -> Refunded.  New requests start as Requested.
+   "Completed order" (Constraint 3) means Status = "Delivery Successful".
+
+15. Voucher Quantity Constraint: VOUCHER.Quantity is the total number of uses a voucher allows (1 = single use). The number of non-cancelled orders using a voucher must never exceed its Quantity. Cancelling an order releases its use. Quantity cannot be reduced below the number of uses already consumed.
+
+16. Voucher Single Use per Buyer Constraint: A BUYER may have at most one non-cancelled order that uses a given VOUCHER.
+
+17. Voucher Terms Immutability Constraint: Once any order has used a voucher, its Discount_Percent, Min_Order_Value, Max_Discount_Amount, Start_Date and End_Date cannot be changed (otherwise the derived Total_Amount of historical orders would silently change).
+
+18. Order Freeze Constraint: ORDER_DETAIL lines can be inserted, changed or deleted only while the order is "Pending Confirmation" and has no payment in status Paid or Refunded. Shipping_Fee, Voucher_Code and Buyer_ID cannot change after the order leaves "Pending Confirmation". Only orders still "Pending Confirmation" can be deleted.
+
+19. Order Completeness Constraint: An order must contain at least one line before it can be confirmed. (Every product should also have at least one PRODUCT_VARIANT - checked by an audit query, because it cannot be enforced at INSERT time.)
+
+20. Return Consistency Constraint: The BUYER of a RETURN_REQUEST must be the buyer who placed the referenced ORDER.
+
+21. Product Variant Constraint: Variant_Name is unique within a PRODUCT. Price and stock belong to the variant, not to the product.
+
+=====================================================================
+RULES THE DATABASE CANNOT ENFORCE AT INSERT TIME (audit queries instead)
+=====================================================================
+ - Every USER is a BUYER or a SELLER (total specialization).
+ - Every PRODUCT has at least one PRODUCT_VARIANT.
+ SQL Server has no deferred constraints, so enforcing either at INSERT would reject the very first row of every new user or product.

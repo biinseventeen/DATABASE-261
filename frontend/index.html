@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopeeDB · Sàn mua sắm</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="marketplace.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#"><span class="brand-mark">S</span><span>Shopee<span class="brand-light">DB</span></span></a>
+      <div class="side-label">MUA SẮM</div>
+      <button class="nav-item active" data-view="buyer"><span>⌂</span> Cửa hàng</button>
+      <div class="side-label seller-label">KÊNH NGƯỜI BÁN</div>
+      <button class="nav-item" data-view="products"><span>▦</span> Sản phẩm của tôi</button>
+      <button class="nav-item" data-view="analytics"><span>◷</span> Thống kê</button>
+      <div class="sidebar-bottom"><div class="avatar">TH</div><div><strong>ShopeeDB</strong><small>Demo mua sắm</small></div><span class="online-dot"></span></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb">ShopeeDB <span>/</span> <b id="crumb-label">Cửa hàng</b></div>
+        <div class="top-meta"><span class="db-dot"></span> Kết nối ứng dụng <span class="top-divider"></span> <span>VN</span></div>
+      </header>
+
+      <section class="page-heading">
+        <div><p class="eyebrow" id="page-eyebrow">KHÁM PHÁ SẢN PHẨM</p><h1 id="page-title">Cửa hàng</h1><p class="subheading" id="page-subtitle">Chọn sản phẩm và biến thể phù hợp từ các shop.</p></div>
+        <div class="heading-actions">
+          <button class="button button-secondary" id="orders-button">Đơn mua của tôi</button>
+          <button class="button button-primary" id="cart-button"><span>▱</span> Giỏ hàng <b id="cart-count">0</b></button>
+          <button class="button button-primary hidden" id="add-product"><span>＋</span> Thêm sản phẩm</button>
+        </div>
+      </section>
+
+      <section class="view-panel" id="buyer-panel">
+        <div class="store-banner"><div><span class="banner-kicker">SHOPEE DB · MUA SẮM AN TÂM</span><h2>Tìm món đồ bạn cần</h2><p>Sản phẩm, giá và tồn kho theo từng phân loại.</p></div><div class="banner-art">✦</div></div>
+        <div class="toolbar buyer-toolbar">
+          <label class="search-box"><span>⌕</span><input id="buyer-search" type="search" placeholder="Tìm sản phẩm hoặc shop..."></label>
+          <select id="buyer-category" aria-label="Lọc danh mục"><option value="">Tất cả danh mục</option></select>
+          <select id="buyer-sort" aria-label="Sắp xếp"><option value="name-asc">Liên quan</option><option value="price-asc">Giá thấp đến cao</option><option value="price-desc">Giá cao đến thấp</option><option value="rating-desc">Đánh giá cao</option></select>
+        </div>
+        <div class="store-section-heading"><div><h2>Gợi ý hôm nay</h2><p id="buyer-result-count">Đang tải sản phẩm...</p></div><span class="catalog-badge">SẢN PHẨM ĐANG BÁN</span></div>
+        <div id="buyer-products" class="product-grid"><div class="loading-card">Đang tải danh sách sản phẩm...</div></div>
+      </section>
+
+      <section class="view-panel hidden" id="products-panel">
+        <div class="summary-row">
+          <div class="summary-card"><div class="summary-icon lilac">▦</div><div><span>Sản phẩm của shop</span><strong id="total-products">—</strong></div></div>
+          <div class="summary-card"><div class="summary-icon mint">✓</div><div><span>Đang hiển thị</span><strong id="visible-products">—</strong></div></div>
+          <div class="summary-card"><div class="summary-icon amber">◈</div><div><span>Biến thể gần hết</span><strong id="low-stock">—</strong></div><span class="summary-note">tồn kho ≤ 10</span></div>
+        </div>
+        <div class="toolbar">
+          <label class="search-box"><span>⌕</span><input id="seller-search" type="search" placeholder="Tìm tên sản phẩm hoặc shop..."></label>
+          <select id="seller-account" aria-label="Chọn shop quản lý"><option value="">Chọn shop</option></select>
+          <select id="seller-category" aria-label="Lọc theo danh mục"><option value="">Tất cả danh mục</option></select>
+          <select id="seller-sort" aria-label="Sắp xếp"><option value="name-asc">Tên: A → Z</option><option value="name-desc">Tên: Z → A</option><option value="price-asc">Giá: thấp đến cao</option><option value="price-desc">Giá: cao đến thấp</option><option value="stock-asc">Tồn kho: thấp đến cao</option></select>
+          <button class="button button-quiet" id="refresh" title="Tải lại">↻</button>
+        </div>
+        <div class="table-card">
+          <div class="table-top"><div><h2>Danh sách sản phẩm</h2><p id="result-count">Đang tải dữ liệu...</p></div><span class="live-badge"><i></i> Dữ liệu trực tiếp</span></div>
+          <div class="table-scroll"><table><thead><tr><th>SẢN PHẨM</th><th>DANH MỤC</th><th>SHOP</th><th>GIÁ</th><th>TỒN KHO</th><th>ĐÁNH GIÁ</th><th></th></tr></thead><tbody id="product-rows"><tr><td colspan="7" class="empty-state">Đang tải...</td></tr></tbody></table></div>
+          <div class="table-footer"><span id="footer-count">— sản phẩm</span><span>Giá và tồn kho được tổng hợp từ Product_Variant</span></div>
+        </div>
+      </section>
+
+      <section class="view-panel hidden" id="analytics-panel">
+        <div class="analytics-intro"><div><p class="eyebrow">HIỆU QUẢ KINH DOANH</p><h2>Sản phẩm bán chạy</h2><p>Thống kê theo số lượng đã bán trong các đơn hàng.</p></div><label class="inline-filter">Số đơn tối thiểu <input id="min-orders" type="number" min="1" value="1"></label></div>
+        <div class="table-card"><div class="table-top"><div><h2>Xếp hạng sản phẩm</h2><p>Kết quả từ procedure thống kê của nhóm</p></div><button class="button button-secondary" id="load-stats">Cập nhật thống kê</button></div><div class="table-scroll"><table><thead><tr><th>SẢN PHẨM</th><th>DANH MỤC</th><th>ĐƠN HÀNG</th><th>ĐÃ BÁN</th><th>DOANH THU</th></tr></thead><tbody id="stats-rows"><tr><td colspan="5" class="empty-state">Nhập điều kiện rồi chọn “Cập nhật thống kê”.</td></tr></tbody></table></div></div>
+      </section>
+
+      <section class="view-panel hidden" id="orders-panel">
+        <div class="store-section-heading"><div><h2>Đơn mua của tôi</h2><p>Đơn hàng được liên kết với tài khoản Buyer trong CSDL.</p></div><button class="button button-secondary" id="reload-orders">Tải lại đơn</button></div>
+        <div class="table-card"><div class="table-scroll"><table><thead><tr><th>MÃ ĐƠN</th><th>NGÀY ĐẶT</th><th>SẢN PHẨM</th><th>TỔNG TIỀN</th><th>TRẠNG THÁI</th><th>THANH TOÁN</th></tr></thead><tbody id="orders-rows"><tr><td colspan="6" class="empty-state">Chọn tài khoản Buyer trong giỏ hàng để xem đơn mua.</td></tr></tbody></table></div></div>
+      </section>
+      <footer class="page-footer">ShopeeDB <span>·</span> Marketplace demo theo schema CSDL BTL2</footer>
+    </main>
+  </div>
+
+  <dialog id="product-dialog" class="product-dialog">
+    <form id="product-form">
+      <div class="dialog-heading"><div><p class="eyebrow">QUẢN LÝ DANH MỤC VÀ BIẾN THỂ</p><h2 id="dialog-title">Thêm sản phẩm</h2></div><button class="icon-button" type="button" id="close-dialog" aria-label="Đóng">×</button></div>
+      <input type="hidden" id="product-id">
+      <label>Tên sản phẩm <input id="product-name" maxlength="200" required placeholder="Ví dụ: Tai nghe Bluetooth"></label>
+      <label>Mô tả <textarea id="product-description" rows="3" placeholder="Mô tả sản phẩm"></textarea></label>
+      <div class="form-grid"><label>Danh mục <select id="product-category" required><option value="">Chọn danh mục</option></select></label><label>Người bán <select id="product-seller" required><option value="">Chọn shop</option></select></label></div>
+      <div class="variant-section"><div class="image-section-heading"><div><strong>Phân loại, giá và tồn kho</strong><small>Mỗi sản phẩm cần ít nhất một biến thể có giá bán</small></div><button class="button button-secondary button-small" id="add-variant" type="button">＋ Thêm phân loại</button></div><div id="variant-list" class="variant-list"></div></div>
+      <div class="image-section"><div class="image-section-heading"><div><strong>Ảnh sản phẩm</strong><small>URL ảnh http/https, tối đa 400 ký tự</small></div><button class="button button-secondary button-small" type="button" id="add-image-url">＋ Thêm ảnh</button></div><div id="image-url-list" class="image-url-list"></div></div>
+      <div class="dialog-actions"><button class="button button-secondary" type="button" id="cancel-dialog">Hủy</button><button class="button button-primary" id="save-product" type="submit">Lưu sản phẩm</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="detail-dialog" class="product-dialog detail-dialog"><div id="detail-content"></div></dialog>
+  <dialog id="cart-dialog" class="product-dialog cart-dialog"><div id="cart-content"></div></dialog>
+  <dialog id="orders-dialog" class="product-dialog orders-dialog"><div id="orders-dialog-content"></div></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
